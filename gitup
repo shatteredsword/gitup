@@ -1,0 +1,43 @@
+clone() {
+	git clone --jobs 8 --recurse-submodules $@
+	if [[ "${!#}" == *".git" ]]; then
+		A=$(echo ${!#} | sed -E 's_.*/(.*).git$_\1_')
+		B=$A
+	else
+		B=${!#}
+	fi
+	echo "assuming directory name is $B"
+	SUBMODULE_ARRAY=($(git -C $B submodule--helper list | sed -e 's/^.* 0\t//' | tr '\n' ' '))
+	for i in "${SUBMODULE_ARRAY[@]}"; do
+		#echo $i
+		#echo "$B/$i"
+		COMMIT=$(git -C "$B/$i" rev-parse HEAD)
+		#echo $COMMIT
+		BRANCH_ARRAY=($(git -C $B/$i branch --contains $COMMIT))
+		BRANCH="${BRANCH_ARRAY[-1]}"
+		echo "checking out $BRANCH branch for submodule $i"
+		git -C $B/$i checkout $BRANCH
+	done
+}
+
+help() {
+	cat << EOF
+usage: gitup <command>
+
+These are the current available commands:
+clone
+EOF
+}
+
+menu() {
+	if [ "$1" = "clone" ] || [ "$1" = "placeholder" ]; then
+		$@
+	elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+		help
+	else
+		echo "gitup: '$1' is not a valid parameter. See 'gitup --help'."
+	fi
+}
+
+menu $@
+# git submodule--helper list | sed -e 's/^.* 0\t//'
