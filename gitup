@@ -20,6 +20,12 @@ clone() {
 	done
 }
 
+submodule() {
+	if [ "$1" = "add" ]; then
+		git submodule add $2
+	fi
+}
+
 help() {
 	cat << EOF
 usage: gitup <command>
@@ -30,7 +36,7 @@ EOF
 }
 
 menu() {
-	if [ "$1" = "clone" ] || [ "$1" = "placeholder" ]; then
+	if [ "$1" = "clone" ] || [ "$1" = "submodule" ]; then
 		$@
 	elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 		help
