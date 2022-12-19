@@ -1,28 +1,76 @@
-clone() {
-	git clone --jobs 8 --recurse-submodules $@
-	if [[ "${!#}" == *".git" ]]; then
-		A=$(echo ${!#} | sed -E 's_.*/(.*).git$_\1_')
-		B=$A
-	else
-		B=${!#}
-	fi
-	echo "assuming directory name is $B"
-	SUBMODULE_ARRAY=($(git -C $B submodule--helper list | sed -e 's/^.* 0\t//' | tr '\n' ' '))
+subadd() {
+	git submodule add $1
+	git submodule update --init --recursive
+	SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
 	for i in "${SUBMODULE_ARRAY[@]}"; do
-		#echo $i
-		#echo "$B/$i"
-		COMMIT=$(git -C "$B/$i" rev-parse HEAD)
-		#echo $COMMIT
-		BRANCH_ARRAY=($(git -C $B/$i branch --contains $COMMIT))
-		BRANCH="${BRANCH_ARRAY[-1]}"
-		echo "checking out $BRANCH branch for submodule $i"
-		git -C $B/$i checkout $BRANCH
+		echo $i
+		COMMIT=$(git -C $i rev-parse HEAD)
+		echo $COMMIT
+		BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | sed 's/.*\\)//')
+		echo $BRANCH
 	done
 }
 
-submodule() {
-	if [ "$1" = "add" ]; then
-		git submodule add $2
+subcheckout() {
+	if [ "$1" = "-b" ]; then
+		git checkout -b $2
+		git submodule foreach --recursive git checkout -b $2
+	elif [ "$1" != "" ]; then
+		if git rev-parse --quiet --verify $1 > /dev/null; then
+			echo "$1 branche exists on main repo"
+			if git submodule foreach --recursive git rev-parse --quiet --verify $1 > /dev/null; then
+				echo "$1 branche exists on all subrepos"
+				git checkout $1
+				git submodule foreach --recursive git checkout $1
+			else
+				echo "$1 branch does not exist in subrepos"
+			fi
+		else
+			echo "$1 branch does not exist in main repo"
+		fi
+	else
+		echo "contains no argument"
+	fi
+}
+
+subcommit() {
+	if [ "$1" = "-m" ]; then
+		git commit -m "$2"
+		git submodule foreach --recursive git commit -m "$2"
+	else
+		git commit -m "$1"
+		git submodule foreach --recursive git commit -m "$1"
+	fi
+}
+
+subrm() {
+	rm -irf $1
+	git rm $1
+	rm -irf .git/modules/$1
+	git config --remove-section submodule.$1
+}
+
+substatus() {
+	git status
+	git submodule foreach --recursive git status
+}
+
+subtag() {
+	REMOTE=$(git remote)
+	if [ "$REMOTE" = "origin" ]; then
+			if [ "$1" = "-d" ]; then
+				git tag -d $1
+				git push origin :refs/tags/$1
+				git submodule foreach --recursive git tag -d $1
+				git submodule foreach --recursive git push origin :refs/tags/$1
+			else
+				git tag $1
+				git push origin $1
+				git submodule foreach --recursive git tag $1
+				git submodule foreach --recursive git push origin $1
+			fi
+	else
+		echo "this command only works on repos with a single remote"
 	fi
 }
 
@@ -31,17 +79,18 @@ help() {
 usage: gitup <command>
 
 These are the current available commands:
-clone
+checkout [-b] [--recursive|--recurse-submodules] <branch>
+status
 EOF
 }
 
 menu() {
-	if [ "$1" = "clone" ] || [ "$1" = "submodule" ]; then
+	if [ "$1" = "subadd" ] || [ "$1" = "subcheckout" ] || [ "$1" = "subcommit" ] || [ "$1" = "subrm" ] || [ "$1" = "substatus" ] || [ "$1" = "subtag" ]; then
 		$@
 	elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 		help
 	else
-		echo "gitup: '$1' is not a valid parameter. See 'gitup --help'."
+		git $@
 	fi
 }
 
