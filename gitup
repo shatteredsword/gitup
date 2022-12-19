@@ -3,11 +3,10 @@ subadd() {
 	git submodule update --init --recursive
 	SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
 	for i in "${SUBMODULE_ARRAY[@]}"; do
-		echo $i
 		COMMIT=$(git -C $i rev-parse HEAD)
-		echo $COMMIT
-		BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | sed 's/.*\\)//')
-		echo $BRANCH
+		BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | tail -n1)
+		echo "checking out $BRANCH branch for $i submodule"
+		git -C $i checkout $BRANCH
 	done
 }
 
