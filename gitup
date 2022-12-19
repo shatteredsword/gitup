@@ -28,7 +28,14 @@ subcheckout() {
 			echo "$1 branch does not exist in main repo"
 		fi
 	else
-		echo "contains no argument"
+		git checkout
+		SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+		for i in "${SUBMODULE_ARRAY[@]}"; do
+			COMMIT=$(git -C $i rev-parse HEAD)
+			BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | tail -n1)
+			echo "checking out $BRANCH branch for $i submodule"
+			git -C $i checkout $BRANCH
+		done
 	fi
 }
 
