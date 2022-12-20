@@ -54,6 +54,12 @@ subrm() {
 	git rm $1
 	rm -irf .git/modules/$1
 	git config --remove-section submodule.$1
+	if [ -f .gitmodules ]; then
+		if ! [ -s .gitmodules ]; then
+			git restore --staged .gitmodules
+			rm .gitmodules
+		fi
+	fi
 }
 
 substatus() {
