@@ -50,10 +50,11 @@ subcommit() {
 }
 
 subrm() {
-	rm -irf $1
-	git rm $1
-	rm -irf .git/modules/$1
-	git config --remove-section submodule.$1
+	TRIMMED=$(echo "$1" | sed 's:/*$::')
+	rm -irf $TRIMMED
+	git rm $TRIMMED
+	rm -irf .git/modules/$TRIMMED
+	git config --remove-section submodule.$TRIMMED
 	if [ -f .gitmodules ]; then
 		if ! [ -s .gitmodules ]; then
 			git restore --staged .gitmodules
@@ -68,21 +69,27 @@ substatus() {
 }
 
 subtag() {
-	REMOTE=$(git remote)
-	if [ "$REMOTE" = "origin" ]; then
-			if [ "$1" = "-d" ]; then
-				git tag -d $1
-				git push origin :refs/tags/$1
-				git submodule foreach --recursive git tag -d $1
-				git submodule foreach --recursive git push origin :refs/tags/$1
-			else
-				git tag $1
-				git push origin $1
-				git submodule foreach --recursive git tag $1
-				git submodule foreach --recursive git push origin $1
-			fi
+	REMOTE_ARRAY=($(git remote))
+	if [ "$1" = "-d" ]; then
+		git tag -d $2
+		git submodule foreach --recursive git tag -d $2
+		for i in "${REMOTE_ARRAY[@]}"; do
+			echo "removing tag $2 from remote $i in main repo"
+			git push $i :refs/tags/$2
+			echo "removing tag $2 from remote $i in all sub-repos"
+			git submodule foreach --recursive git push $i :refs/tags/$2
+		done
+	elif [ "$1" = "-l" ] || [ "$1" = "" ]; then
+		echo "local git tags in main repo:"
+		git tag -l
+		git submodule foreach --recursive git tag -l
 	else
-		echo "this command only works on repos with a single remote"
+		git tag $1
+		git submodule foreach --recursive git tag $1
+		for i in "${REMOTE_ARRAY[@]}"; do
+			git push $i $1 
+			git submodule foreach --recursive git push $i $1
+		done
 	fi
 }
 
