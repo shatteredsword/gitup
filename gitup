@@ -82,15 +82,63 @@ subtag() {
 	elif [ "$1" = "-l" ] || [ "$1" = "" ]; then
 		echo "local git tags in main repo:"
 		git tag -l
+		echo "local git tags in submodules:"
 		git submodule foreach --recursive git tag -l
+		for i in "${REMOTE_ARRAY[@]}"; do
+			echo "git tags in main repo from $i remote"
+			git ls-remote --tags $i
+		done
 	else
+		echo "git tag"
 		git tag $1
+		echo "git submodule foreach"
 		git submodule foreach --recursive git tag $1
 		for i in "${REMOTE_ARRAY[@]}"; do
-			git push $i $1 
-			git submodule foreach --recursive git push $i $1
+			echo "ENTERING REMOTE $i"
+			echo "git push $i $1"
+			git push $i $1
+			echo "remote submodule foreach"
+			#git submodule foreach --recursive git push $i $1
 		done
 	fi
+}
+
+subdiff() {
+	REMOTE_ARRAY=($(git remote))
+	SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+	# LOCALCOMMIT=$(git rev-parse HEAD)
+	# CURRENTBRANCH=$(git branch --show-current)
+	for i in "${REMOTE_ARRAY[@]}"; do
+		HEADBRANCH=$(git remote show $i | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
+		git fetch -q $i $HEADBRANCH
+		PUSHLOG=$(git log $i/$HEADBRANCH..HEAD)
+		PULLLOG=$(git log HEAD..$i/$HEADBRANCH)
+		if [ "$PUSHLOG" != "" ]; then
+			echo "unpushed changes to $i/$HEADBRANCH in main repo:"
+			git log $i/$HEADBRANCH..HEAD
+		fi
+		if [ "$PULLLOG" != "" ]; then
+			echo "unpulled changes from $i/$HEADBRANCH in main repo"
+			git log HEAD..$i/$HEADBRANCH
+		fi
+	done
+	for i in "${SUBMODULE_ARRAY[@]}"; do
+		SUBREMOTE_ARRAY=($(git -C $i remote))
+		for j in "${SUBREMOTE_ARRAY[@]}"; do
+			SUBHEADBRANCH=$(git -C $i remote show $j | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
+			git -C $i fetch -q $j $SUBHEADBRANCH
+			SUBPUSHLOG=$(git -C $i log $j/$SUBHEADBRANCH..HEAD)
+			SUBPULLLOG=$(git -C $i log HEAD..$j/$SUBHEADBRANCH)
+			if [ "$SUBPUSHLOG" != "" ]; then
+				echo "unpushed changes to $j/$SUBHEADBRANCH in submodule $i:"
+				git -C $i log $j/$SUBHEADBRANCH..HEAD
+			fi
+			if [ "$SUBPULLLOG" != "" ]; then
+				echo "unpulled changes from $j/$SUBHEADBRANCH in submodule $i:"
+				git -C $i log HEAD..$j/$SUBHEADBRANCH
+			fi
+		done
+	done
 }
 
 help() {
@@ -104,7 +152,7 @@ EOF
 }
 
 menu() {
-	if [ "$1" = "subadd" ] || [ "$1" = "subcheckout" ] || [ "$1" = "subcommit" ] || [ "$1" = "subrm" ] || [ "$1" = "substatus" ] || [ "$1" = "subtag" ]; then
+	if [ "$1" = "subadd" ] || [ "$1" = "subcheckout" ] || [ "$1" = "subcommit" ] || [ "$1" = "subdiff" ] || [ "$1" = "subrm" ] || [ "$1" = "substatus" ] || [ "$1" = "subtag" ]; then
 		$@
 	elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 		help
