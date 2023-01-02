@@ -8,7 +8,7 @@ declare -A ARGUMENTS=(
 	[pending]=0
 	[subadd]=1
 	[subcheckout]=2
-	[subcommit]=2
+	[subcommit]=-1
 	[subrm]=1
 	[substatus]=0
 	[subtag]=2
@@ -80,7 +80,7 @@ subadd() {
 
 subcheckout() {
 	if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ "$2" = "--help" ] || [ "$2" = "-h" ] || [ "$1" = "-bh" ] || [ "$1" = "-hb" ] || [ "$2" = "-bh" ] || [ "$2" = "-hb" ]; then
-		man gitup-subcheckout
+		man "$SCRIPT_NAME-subcheckout"
 	elif [ "$1" = "-b" ]; then
 		git checkout -b $2
 		git submodule foreach --recursive git checkout -b $2
@@ -110,12 +110,11 @@ subcheckout() {
 }
 
 subcommit() {
-	if [ "$1" = "-m" ]; then
-		git commit -m "$2"
-		git submodule foreach --recursive git commit -m "$2"
+	if [[ "$*" == *"--help"* ]] || [[ "$*" == *"-h"* ]]; then
+		man gitup-subcommit
 	else
-		git commit -m "$1"
-		git submodule foreach --recursive git commit -m "$1"
+		git commit "$@"
+		git submodule foreach --recursive git commit "$@"
 	fi
 }
 
