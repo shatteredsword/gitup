@@ -1,24 +1,94 @@
-subadd() {
-	git submodule add $1
-	git submodule update --init --recursive
+SCRIPT_NAME=$(echo "$0" | sed 's_./__')
+
+#add any top level functions that you want to be accessible to this list 
+#with the corresponding maximum number of arguments of that function
+#(not including the --help argument)
+declare -A ARGUMENTS=(
+	[config]=0
+	[pending]=0
+	[subadd]=1
+	[subcheckout]=2
+	[subcommit]=2
+	[subrm]=1
+	[substatus]=0
+	[subtag]=2
+	[help]=1
+	[mangen]=0
+)
+
+config() {
+	echo "this is a thing"
+	read -p "do you want to continue? y/n " RESPONSE
+	echo "$RESPONSE"
+}
+
+pending() {
+	REMOTE_ARRAY=($(git remote))
 	SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+	for i in "${REMOTE_ARRAY[@]}"; do
+		HEADBRANCH=$(git remote show $i | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
+		git fetch -q $i $HEADBRANCH
+		PUSHLOG=$(git log $i/$HEADBRANCH..HEAD)
+		PULLLOG=$(git log HEAD..$i/$HEADBRANCH)
+		if [ "$PUSHLOG" != "" ]; then
+			echo "unpushed changes to $i/$HEADBRANCH in main repo:"
+			git log $i/$HEADBRANCH..HEAD
+		fi
+		if [ "$PULLLOG" != "" ]; then
+			echo "unpulled changes from $i/$HEADBRANCH in main repo"
+			git log HEAD..$i/$HEADBRANCH
+		fi
+	done
 	for i in "${SUBMODULE_ARRAY[@]}"; do
-		COMMIT=$(git -C $i rev-parse HEAD)
-		BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | tail -n1)
-		echo "checking out $BRANCH branch for $i submodule"
-		git -C $i checkout $BRANCH
+		SUBREMOTE_ARRAY=($(git -C $i remote))
+		for j in "${SUBREMOTE_ARRAY[@]}"; do
+			SUBHEADBRANCH=$(git -C $i remote show $j | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
+			git -C $i fetch -q $j $SUBHEADBRANCH
+			SUBPUSHLOG=$(git -C $i log $j/$SUBHEADBRANCH..HEAD)
+			SUBPULLLOG=$(git -C $i log HEAD..$j/$SUBHEADBRANCH)
+			if [ "$SUBPUSHLOG" != "" ]; then
+				echo "unpushed changes to $j/$SUBHEADBRANCH in submodule $i:"
+				git -C $i log $j/$SUBHEADBRANCH..HEAD
+			fi
+			if [ "$SUBPULLLOG" != "" ]; then
+				echo "unpulled changes from $j/$SUBHEADBRANCH in submodule $i:"
+				git -C $i log HEAD..$j/$SUBHEADBRANCH
+			fi
+		done
 	done
 }
 
+subadd() {
+	if [ "$1" = "" ]; then
+		echo "$SCRIPT_NAME subadd requires a repo URL as an argument"
+	elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		man "$SCRIPT_NAME-subadd"
+	else
+		git submodule add $1
+		if [ $? -eq 0 ]; then
+			git submodule update --init --recursive
+			SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+			for i in "${SUBMODULE_ARRAY[@]}"; do
+				COMMIT=$(git -C $i rev-parse HEAD)
+				BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | tail -n1)
+				echo "checking out $BRANCH branch for $i submodule"
+				git -C $i checkout $BRANCH
+			done
+		fi
+	fi
+}
+
 subcheckout() {
-	if [ "$1" = "-b" ]; then
+	if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ "$2" = "--help" ] || [ "$2" = "-h" ] || [ "$1" = "-bh" ] || [ "$1" = "-hb" ] || [ "$2" = "-bh" ] || [ "$2" = "-hb" ]; then
+		man gitup-subcheckout
+	elif [ "$1" = "-b" ]; then
 		git checkout -b $2
 		git submodule foreach --recursive git checkout -b $2
 	elif [ "$1" != "" ]; then
 		if git rev-parse --quiet --verify $1 > /dev/null; then
-			echo "$1 branche exists on main repo"
+			echo "$1 branch exists on main repo"
 			if git submodule foreach --recursive git rev-parse --quiet --verify $1 > /dev/null; then
-				echo "$1 branche exists on all subrepos"
+				echo "$1 branch exists on all subrepos"
 				git checkout $1
 				git submodule foreach --recursive git checkout $1
 			else
@@ -103,63 +173,77 @@ subtag() {
 	fi
 }
 
-subdiff() {
-	REMOTE_ARRAY=($(git remote))
-	SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
-	# LOCALCOMMIT=$(git rev-parse HEAD)
-	# CURRENTBRANCH=$(git branch --show-current)
-	for i in "${REMOTE_ARRAY[@]}"; do
-		HEADBRANCH=$(git remote show $i | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
-		git fetch -q $i $HEADBRANCH
-		PUSHLOG=$(git log $i/$HEADBRANCH..HEAD)
-		PULLLOG=$(git log HEAD..$i/$HEADBRANCH)
-		if [ "$PUSHLOG" != "" ]; then
-			echo "unpushed changes to $i/$HEADBRANCH in main repo:"
-			git log $i/$HEADBRANCH..HEAD
-		fi
-		if [ "$PULLLOG" != "" ]; then
-			echo "unpulled changes from $i/$HEADBRANCH in main repo"
-			git log HEAD..$i/$HEADBRANCH
-		fi
-	done
-	for i in "${SUBMODULE_ARRAY[@]}"; do
-		SUBREMOTE_ARRAY=($(git -C $i remote))
-		for j in "${SUBREMOTE_ARRAY[@]}"; do
-			SUBHEADBRANCH=$(git -C $i remote show $j | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
-			git -C $i fetch -q $j $SUBHEADBRANCH
-			SUBPUSHLOG=$(git -C $i log $j/$SUBHEADBRANCH..HEAD)
-			SUBPULLLOG=$(git -C $i log HEAD..$j/$SUBHEADBRANCH)
-			if [ "$SUBPUSHLOG" != "" ]; then
-				echo "unpushed changes to $j/$SUBHEADBRANCH in submodule $i:"
-				git -C $i log $j/$SUBHEADBRANCH..HEAD
-			fi
-			if [ "$SUBPULLLOG" != "" ]; then
-				echo "unpulled changes from $j/$SUBHEADBRANCH in submodule $i:"
-				git -C $i log HEAD..$j/$SUBHEADBRANCH
-			fi
-		done
-	done
-}
-
 help() {
-	cat << EOF
-usage: gitup <command>
+	if [ "$1" != "" ]; then
+		if [ "${ARGUMENTS[$1]}" != "" ];then
+			if man "$SCRIPT_NAME-$1" > /dev/null 2>&1; then
+				man "$SCRIPT_NAME-$1"
+			else
+				echo "missing man page for $SCRIPT_NAME-$1"
+			fi
+		else
+			echo "$1 is not a valid $SCRIPT_NAME argument"
+		fi
+	else
+		cat << EOF
+usage: $SCRIPT_NAME <command>
 
 These are the current available commands:
 checkout [-b] [--recursive|--recurse-submodules] <branch>
+install
+mangen
 status
 EOF
+	fi
+}
+
+mangen() {
+	sudo mkdir -p /usr/local/man/man1
+	for f in manpages/*.md; do
+		base=${f%.*}
+		echo "generating $base.1 from $f"
+		pandoc "$f" -s -t man -o "$base.1"
+		echo "zipping $base.1"
+		gzip "$base.1"
+		echo "moving $base.1.gz"
+		sudo mv "$base.1.gz" /usr/local/man/man1
+	done
+	sudo mandb
 }
 
 menu() {
-	if [ "$1" = "subadd" ] || [ "$1" = "subcheckout" ] || [ "$1" = "subcommit" ] || [ "$1" = "subdiff" ] || [ "$1" = "subrm" ] || [ "$1" = "substatus" ] || [ "$1" = "subtag" ]; then
-		$@
-	elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+	if [ "$1" = "" ]; then
 		help
+	elif [ "${ARGUMENTS[$1]}" != "" ]; then
+		if [ "${ARGUMENTS[$1]}" = "-1" ]; then
+			$@
+		elif [ $(($# - 1)) -gt $((${ARGUMENTS[$1]})) ]; then
+			if [ "$2" = "--help" ] || [ "$2" = "-h" ]; then
+				echo "$@"
+				man "$SCRIPT_NAME-$1"
+			else
+				echo "$SCRIPT_NAME $1 only accepts up to ${ARGUMENTS[$1]} arguments"
+				echo "see $SCRIPT_NAME $1 --help for more information"
+			fi
+		else
+			$@
+		fi
+	elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+		if [ $(($# - 2)) -gt $((${ARGUMENTS[$1]})) ]; then
+			echo "$SCRIPT_NAME $1 only accepts up to ${ARGUMENTS[help]} arguments"
+			echo "see $SCRIPT_NAME $1 --help for more information"
+		else
+			if [ "$2" = "" ]; then
+				help
+			elif [ "${ARGUMENTS[$2]}" != "" ]; then
+				help "${@:2}"
+			else
+				echo "$@ is not a valid $SCRIPT_NAME command. see $SCRIPT_NAME --help for more information"
+			fi
+		fi
 	else
-		git $@
+		echo "$@ is not a valid $SCRIPT_NAME command. see $SCRIPT_NAME --help for more information"
 	fi
 }
 
 menu $@
-# git submodule--helper list | sed -e 's/^.* 0\t//'
