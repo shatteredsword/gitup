@@ -10,7 +10,7 @@ declare -A ARGUMENTS=(
 	[subcheckout]=2
 	[subcommit]=-1
 	[subrm]=1
-	[substatus]=0
+	[substatus]=-1
 	[subtag]=2
 	[help]=1
 	[mangen]=0
@@ -23,36 +23,51 @@ config() {
 }
 
 pending() {
-	REMOTE_ARRAY=($(git remote))
-	SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
-	for i in "${REMOTE_ARRAY[@]}"; do
-		HEADBRANCH=$(git remote show $i | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
-		git fetch -q $i $HEADBRANCH
-		PUSHLOG=$(git log $i/$HEADBRANCH..HEAD)
-		PULLLOG=$(git log HEAD..$i/$HEADBRANCH)
-		if [ "$PUSHLOG" != "" ]; then
-			echo "unpushed changes to $i/$HEADBRANCH in main repo:"
-			git log $i/$HEADBRANCH..HEAD
+	local remote_array
+	remote_array=($(git remote))
+	local submodule_array
+	submodule_array=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+	for i in "${remote_array[@]}"; do
+		local headbranch
+		headbranch=$(git remote show $i | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
+		git fetch -q $i $headbranch
+		local pushlog
+		pushlog=$(git log $i/$headbranch..HEAD)
+		local pulllog
+		pulllog=$(git log HEAD..$i/$headbranch)
+		if [ "$pushlog" != "" ]; then
+			echo "unpushed changes to $i/$headbranch in main repo:"
+			git log $i/$headbranch..HEAD
 		fi
-		if [ "$PULLLOG" != "" ]; then
-			echo "unpulled changes from $i/$HEADBRANCH in main repo"
-			git log HEAD..$i/$HEADBRANCH
+		if [ "$pulllog" != "" ]; then
+			echo "unpulled changes from $i/$headbranch in main repo"
+			git log HEAD..$i/$headbranch
+		fi
+		if [ "$pushlog" = "" ] && [ "$pulllog" = "" ]; then
+			echo "main repo is up-to-date"
 		fi
 	done
-	for i in "${SUBMODULE_ARRAY[@]}"; do
-		SUBREMOTE_ARRAY=($(git -C $i remote))
-		for j in "${SUBREMOTE_ARRAY[@]}"; do
-			SUBHEADBRANCH=$(git -C $i remote show $j | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
-			git -C $i fetch -q $j $SUBHEADBRANCH
-			SUBPUSHLOG=$(git -C $i log $j/$SUBHEADBRANCH..HEAD)
-			SUBPULLLOG=$(git -C $i log HEAD..$j/$SUBHEADBRANCH)
-			if [ "$SUBPUSHLOG" != "" ]; then
-				echo "unpushed changes to $j/$SUBHEADBRANCH in submodule $i:"
-				git -C $i log $j/$SUBHEADBRANCH..HEAD
+	for i in "${submodule_array[@]}"; do
+		local subremote_array
+		subremote_array=($(git -C $i remote))
+		for j in "${subremote_array[@]}"; do
+			local subheadbranch
+			subheadbranch=$(git -C $i remote show $j | grep "HEAD branch" | sed -e 's/  HEAD branch: //')
+			git -C $i fetch -q $j $subheadbranch
+			local subpushlog
+			subpushlog=$(git -C $i log $j/$subheadbranch..HEAD)
+			local subpulllog
+			subpulllog=$(git -C $i log HEAD..$j/$subheadbranch)
+			if [ "$subpushlog" != "" ]; then
+				echo "unpushed changes to $j/$subheadbranch in submodule $i:"
+				git -C $i log $j/$subheadbranch..HEAD
 			fi
-			if [ "$SUBPULLLOG" != "" ]; then
-				echo "unpulled changes from $j/$SUBHEADBRANCH in submodule $i:"
-				git -C $i log HEAD..$j/$SUBHEADBRANCH
+			if [ "$subpulllog" != "" ]; then
+				echo "unpulled changes from $j/$subheadbranch in submodule $i:"
+				git -C $i log HEAD..$j/$subheadbranch
+			fi
+			if [ "$subpushlog" = "" ] && [ "$subpulllog" = "" ]; then
+				echo "submodule $i is up-to-date"
 			fi
 		done
 	done
@@ -67,12 +82,15 @@ subadd() {
 		git submodule add $1
 		if [ $? -eq 0 ]; then
 			git submodule update --init --recursive
-			SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
-			for i in "${SUBMODULE_ARRAY[@]}"; do
-				COMMIT=$(git -C $i rev-parse HEAD)
-				BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | tail -n1)
-				echo "checking out $BRANCH branch for $i submodule"
-				git -C $i checkout $BRANCH
+			local submodule_array
+			submodule_array=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+			for i in "${submodule_array[@]}"; do
+				local commit
+				commit=$(git -C $i rev-parse HEAD)
+				local branch
+				branch=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $commit | tail -n1)
+				echo "checking out $branch branch for $i submodule"
+				git -C $i checkout $branch
 			done
 		fi
 	fi
@@ -99,12 +117,15 @@ subcheckout() {
 		fi
 	else
 		git checkout
-		SUBMODULE_ARRAY=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
-		for i in "${SUBMODULE_ARRAY[@]}"; do
-			COMMIT=$(git -C $i rev-parse HEAD)
-			BRANCH=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $COMMIT | tail -n1)
-			echo "checking out $BRANCH branch for $i submodule"
-			git -C $i checkout $BRANCH
+		local submodule_array
+		submodule_array=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+		for i in "${submodule_array[@]}"; do
+			local commit
+			commit=$(git -C $i rev-parse HEAD)
+			local branch
+			branch=$(git -C $i branch --no-color --no-column --format "%(refname:lstrip=2)" --contains $commit | tail -n1)
+			echo "checking out $branch branch for $i submodule"
+			git -C $i checkout $branch
 		done
 	fi
 }
@@ -122,11 +143,12 @@ subrm() {
 	if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 		man "$SCRIPT_NAME-${FUNCNAME[0]}"
 	else
-		TRIMMED=$(echo "$1" | sed 's:/*$::')
-		rm -irf $TRIMMED
-		git rm $TRIMMED
-		rm -irf .git/modules/$TRIMMED
-		git config --remove-section submodule.$TRIMMED
+		local trimmed
+		trimmed=$(echo "$1" | sed 's:/*$::')
+		rm -irf $trimmed
+		git rm $trimmed
+		rm -irf .git/modules/$trimmed
+		git config --remove-section submodule.$trimmed
 		if [ -f .gitmodules ]; then
 			if ! [ -s .gitmodules ]; then
 				git restore --staged .gitmodules
@@ -137,41 +159,90 @@ subrm() {
 }
 
 substatus() {
-	git status
-	git submodule foreach --recursive git status
+	local submodule_array
+	submodule_array=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+	if [[ "$*" == *"--help"* ]] || [[ "$*" == *"-h"* ]]; then
+		man "$SCRIPT_NAME-${FUNCNAME[0]}"
+	elif [ "$1" = "" ]; then
+		echo "status for main repo:"
+		git status
+		for i in "${submodule_array[@]}"; do
+			echo "status for $i submodule:"
+			git -C $i status
+		done
+	else
+		echo "status for main repo:"
+		git status "$@"
+		for i in "${submodule_array[@]}"; do
+			echo "status for $i submodule:"
+			git -C $i status "$@"
+		done
+	fi
 }
 
 subtag() {
-	REMOTE_ARRAY=($(git remote))
-	if [ "$1" = "-d" ]; then
+	local remote_array
+	remote_array=($(git remote))
+	local submodule_array
+	submodule_array=($(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/'))
+	if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ "$2" = "--help" ] || [ "$2" = "-h" ]; then
+		man "$SCRIPT_NAME-${FUNCNAME[0]}"
+	elif [ "$1" = "-d" ] || [ "$1" = "--delete" ]; then
+		echo "removing tag $2 from main repo"
 		git tag -d $2
-		git submodule foreach --recursive git tag -d $2
-		for i in "${REMOTE_ARRAY[@]}"; do
+		for i in "${submodule_array[@]}"; do
+			echo "removing tag $2 from submodule $i"
+			git -C tag -d $2
+		done
+		for i in "${remote_array[@]}"; do
 			echo "removing tag $2 from remote $i in main repo"
 			git push $i :refs/tags/$2
-			echo "removing tag $2 from remote $i in all sub-repos"
-			git submodule foreach --recursive git push $i :refs/tags/$2
 		done
-	elif [ "$1" = "-l" ] || [ "$1" = "" ]; then
+		for i in "${submodule_array[@]}"; do
+			local subremote_array
+			subremote_array=($(git -C $i remote))
+			for j in "${subremote_array[@]}"; do
+				echo "removing tag $2 from remote $j in submodule $i"
+				git -C $i push $j :refs/tags/$2
+			done
+		done
+	elif [ "$1" = "-l" ] || [ "$1" = "--list" ] || [ "$1" = "" ]; then
+		echo "fetching local tags..."
 		echo "local git tags in main repo:"
 		git tag -l
-		echo "local git tags in submodules:"
-		git submodule foreach --recursive git tag -l
-		for i in "${REMOTE_ARRAY[@]}"; do
-			echo "git tags in main repo from $i remote"
+		for i in "${submodule_array[@]}"; do
+			echo "local git tags in submodule $i:"
+			git -C $i tag -l
+		done
+		echo "fetching remote tags..."
+		for i in "${remote_array[@]}"; do
+			echo "git tags from $i remote in main repo:"
 			git ls-remote --tags $i
 		done
+		for i in "${submodule_array[@]}"; do
+			local subremote_array
+			subremote_array=($(git -C $i remote))
+			for j in "${subremote_array[@]}"; do
+				echo "git tags from $j remote in submodule $i:"
+				git -C $i ls-remote --tags $j
+			done
+		done
 	else
-		echo "git tag"
+		echo "adding tag $1 to main repo"
 		git tag $1
-		echo "git submodule foreach"
-		git submodule foreach --recursive git tag $1
-		for i in "${REMOTE_ARRAY[@]}"; do
-			echo "ENTERING REMOTE $i"
-			echo "git push $i $1"
+		for i in "${remote_array[@]}"; do
+			echo "pushing tag $1 to remote $i"
 			git push $i $1
-			echo "remote submodule foreach"
-			#git submodule foreach --recursive git push $i $1
+		done
+		for i in "${submodule_array[@]}"; do
+			echo "adding tag $1 to submodule $i"
+			git -C $i tag $1
+			local subremote_array
+			subremote_array=($(git -C $i remote))
+			for j in "${subremote_array[@]}"; do
+				echo "pushing tag $1 to remote $j in submodule $i"
+				git -C $i push $j $1
+			done
 		done
 	fi
 }
@@ -192,10 +263,14 @@ help() {
 usage: $SCRIPT_NAME <command>
 
 These are the current available commands:
-checkout [-b] [--recursive|--recurse-submodules] <branch>
-install
+pending [--help|-h]
+subadd [<URL>|--help|-h]
+subcheckout [-b] [<BRANCH>]
+subcommit [*] [--help|-h]
+subrm [<PATH>|--help|-h]
+substatus [<options>...] [--] [<pathspec>...]
+subtag [<options>] [<TAGNAME>]
 mangen
-status
 EOF
 	fi
 }
@@ -203,6 +278,7 @@ EOF
 mangen() {
 	sudo mkdir -p /usr/local/man/man1
 	for f in manpages/*.md; do
+		local base
 		base=${f%.*}
 		echo "generating $base.1 from $f"
 		pandoc "$f" -s -t man -o "$base.1"
@@ -210,6 +286,7 @@ mangen() {
 		gzip "$base.1"
 		echo "moving $base.1.gz"
 		sudo mv "$base.1.gz" /usr/local/man/man1
+		pandoc "$f" -s -t man -o "$base.1"
 	done
 	sudo mandb
 }
