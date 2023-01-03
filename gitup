@@ -62,7 +62,7 @@ subadd() {
 	if [ "$1" = "" ]; then
 		echo "$SCRIPT_NAME subadd requires a repo URL as an argument"
 	elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-		man "$SCRIPT_NAME-subadd"
+		man "$SCRIPT_NAME-${FUNCNAME[0]}"
 	else
 		git submodule add $1
 		if [ $? -eq 0 ]; then
@@ -80,7 +80,7 @@ subadd() {
 
 subcheckout() {
 	if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ "$2" = "--help" ] || [ "$2" = "-h" ] || [ "$1" = "-bh" ] || [ "$1" = "-hb" ] || [ "$2" = "-bh" ] || [ "$2" = "-hb" ]; then
-		man "$SCRIPT_NAME-subcheckout"
+		man "$SCRIPT_NAME-${FUNCNAME[0]}"
 	elif [ "$1" = "-b" ]; then
 		git checkout -b $2
 		git submodule foreach --recursive git checkout -b $2
@@ -111,7 +111,7 @@ subcheckout() {
 
 subcommit() {
 	if [[ "$*" == *"--help"* ]] || [[ "$*" == *"-h"* ]]; then
-		man gitup-subcommit
+		man "$SCRIPT_NAME-${FUNCNAME[0]}"
 	else
 		git commit "$@"
 		git submodule foreach --recursive git commit "$@"
@@ -119,15 +119,19 @@ subcommit() {
 }
 
 subrm() {
-	TRIMMED=$(echo "$1" | sed 's:/*$::')
-	rm -irf $TRIMMED
-	git rm $TRIMMED
-	rm -irf .git/modules/$TRIMMED
-	git config --remove-section submodule.$TRIMMED
-	if [ -f .gitmodules ]; then
-		if ! [ -s .gitmodules ]; then
-			git restore --staged .gitmodules
-			rm .gitmodules
+	if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+		man "$SCRIPT_NAME-${FUNCNAME[0]}"
+	else
+		TRIMMED=$(echo "$1" | sed 's:/*$::')
+		rm -irf $TRIMMED
+		git rm $TRIMMED
+		rm -irf .git/modules/$TRIMMED
+		git config --remove-section submodule.$TRIMMED
+		if [ -f .gitmodules ]; then
+			if ! [ -s .gitmodules ]; then
+				git restore --staged .gitmodules
+				rm .gitmodules
+			fi
 		fi
 	fi
 }
