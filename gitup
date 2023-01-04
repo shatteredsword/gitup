@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 SCRIPT_NAME=$(echo "$0" | sed 's_./__')
 
 #add any top level functions that you want to be accessible to this list 
