@@ -5,6 +5,9 @@ Usage:
 
 `gitup <command> [OPTION]`
 
+# INSTALLATION
+`curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash`
+
 # DESCRIPTION
 
 gitup is a bash-based wrapper for git primarily designed to make working with 
