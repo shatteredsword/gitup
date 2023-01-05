@@ -5,15 +5,30 @@ Usage:
 
 `gitup <command> [OPTION]`
 
-# INSTALLATION
+# User Installation
 `curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash`
 
-# DESCRIPTION
+# Global Installation
+`curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash global`
+
+# Description
 
 gitup is a bash-based wrapper for git primarily designed to make working with 
 submodules and multiple remotes a much more streamlined process.
 
-# GITUP COMMANDS
+# Recommended Git Config
+
+submodule.recurse=true
+
+submodule.propagatebranches=true
+
+push.autosetupremote=true
+
+push.recursesubmodules=on-demand
+
+status.submodulesummary=true
+
+# Gitup Commands
 	
 **gitup pending** - Show unpulled and unpushed commits in all submodules, from all remotes.
 
