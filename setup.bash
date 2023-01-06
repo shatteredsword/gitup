@@ -67,7 +67,7 @@ local_install() {
 	check_dependencies
 	echo "running local installation"
 	mkdir -p $HOME/.local/bin
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup -o $HOME/.local/bin/gitup
+	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $HOME/.local/bin/gitup
 	chmod +x $HOME/.local/bin/gitup
 	echo "install to $HOME/.local/bin"
 	echo "test of setup script"
