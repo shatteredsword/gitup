@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SCRIPT_NAME=$(echo "$0" | sed 's_./__')
+SCRIPT_NAME=$(basename "$0")
 
 #add any top level functions that you want to be accessible to this list 
 #with the corresponding maximum number of arguments of that function

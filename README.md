@@ -5,6 +5,15 @@ Usage:
 
 `gitup <command> [OPTION]`
 
+# Dependencies
+cat
+git
+grep
+man
+mandb
+rm
+sed
+
 # User Installation
 `curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash`
 or
