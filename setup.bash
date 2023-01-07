@@ -152,6 +152,26 @@ menu() {
 		else
 			local_uninstall
 		fi
+	elif [ "$1" = "--generate-release" ]; then
+		cd manpages
+		declare -a dirs
+		i=1
+		for d in */; do
+			dirs[i++]="${d%/}"
+		done
+		for j in "${dirs[@]}"; do
+			echo $j
+			for f in $j/*.md; do
+				local base
+				base=${f%.md}
+				echo "generating $base from $f"
+				pandoc "$f" -s -t man -o "$base"
+				echo "zipping $base"
+				gzip -f "$base"
+			done
+		done
+		tar -czf manpages.tar.gz **/*.gz
+		tar -tvf manpages.tar.gz
 	else
 		local_install
 	fi

@@ -279,7 +279,7 @@ EOF
 
 mangen() {
 	sudo mkdir -p /usr/local/man/man1
-	for f in manpages/*.md; do
+	for f in manpages/man1/*.md; do
 		local base
 		base=${f%.*}
 		echo "generating $base.1 from $f"
@@ -287,8 +287,7 @@ mangen() {
 		echo "zipping $base.1"
 		gzip "$base.1"
 		echo "moving $base.1.gz"
-		sudo mv "$base.1.gz" /usr/local/man/man1
-		pandoc "$f" -s -t man -o "$base.1"
+		#sudo mv "$base.1.gz" /usr/local/man/man1
 	done
 	sudo mandb
 }
