@@ -153,6 +153,11 @@ menu() {
 			local_uninstall
 		fi
 	elif [ "$1" = "--generate-release" ]; then
+		local is_pandoc_installed=$(command -v pandoc)
+		if [ "$is_pandoc_installed" = "" ]; then
+			sudo apt update
+			sudo apt install -y pandoc
+		fi
 		cd manpages
 		declare -a dirs
 		i=1
