@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+VERSION="gitup version 0.1.0"
 SCRIPT_NAME=$(basename "$0")
 
 #add any top level functions that you want to be accessible to this list 
@@ -264,11 +265,11 @@ help() {
 usage: $SCRIPT_NAME <command>
 
 These are the current available commands:
-pending [--help|-h]
-subadd [<URL>|--help|-h]
+pending
+subadd [<URL>]
 subcheckout [-b] [<BRANCH>]
-subcommit [*] [--help|-h]
-subrm [<PATH>|--help|-h]
+subcommit [*]
+subrm [<PATH>]
 substatus [<options>...] [--] [<pathspec>...]
 subtag [<options>] [<TAGNAME>]
 mangen
@@ -322,6 +323,8 @@ menu() {
 				echo "$@ is not a valid $SCRIPT_NAME command. see $SCRIPT_NAME --help for more information"
 			fi
 		fi
+	elif [ "$1" = "version" ] || [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
+		echo "$VERSION"
 	else
 		echo "$@ is not a valid $SCRIPT_NAME command. see $SCRIPT_NAME --help for more information"
 	fi

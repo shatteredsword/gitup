@@ -56,30 +56,54 @@ check_dependencies() {
 global_install() {
 	check_dependencies
 	echo "running global installation"
-	echo "install to /usr/local/bin"
+	sudo mkdir -p /usr/local/bin
+	echo "installing gitup to /usr/local/bin"
+	local temp_file=$(mktemp)
+	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $temp_file
+	sudo chown root:root $temp_file
+	sudo chmod 755 $temp_file
+	sudo mv $temp_file /usr/local/bin/gitup
+	echo "installing manpages"
+	echo "TODO"
+	echo "installing bash completions"
+	echo "TODO"
 }
 
 global_uninstall() {
 	echo "removing global install of gitup"
+	echo "removing /usr/local/bin/gitup"
+	sudo rm /usr/local/bin/gitup
+	echo "removing bash completions"
+	echo "TODO"
+	echo "please log out and back in to remove any residual shell references"
 }
 
 local_install() {
 	check_dependencies
 	echo "running local installation"
 	mkdir -p $HOME/.local/bin
+	echo "installing gitup to \$HOME/.local/bin"
 	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $HOME/.local/bin/gitup
 	chmod +x $HOME/.local/bin/gitup
-	echo "install to $HOME/.local/bin"
-	echo "test of setup script"
-	echo "checking dependencies"
-	echo "downloading content"
-	echo "installing script"
+	echo "installing manpages"
+	echo "TODO"
 	echo "installing bash completions"
-	echo "reloading environment"
+	if [ -f "$HOME/.profile" ]; then
+		echo "reloading environment"
+		source $HOME/.profile
+	fi
 }
 
 local_uninstall() {
-	echo "local uninstall"
+	echo "removing local install of gitup"
+	echo "removing \$HOME/.local/bin/gitup"
+	rm $HOME/.local/bin/gitup
+	echo "removing bash completions"
+	echo "TODO"
+	if [ -f "$HOME/.profile" ]; then
+		echo "reloading environment"
+		source $HOME/.profile
+	fi
 }
 
 sudo_prompt() {

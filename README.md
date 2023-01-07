@@ -7,10 +7,12 @@ Usage:
 
 # Dependencies
 cat
+curl
 git
 grep
 man
 mandb
+mkdir
 rm
 sed
 

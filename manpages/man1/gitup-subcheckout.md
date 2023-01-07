@@ -1,5 +1,5 @@
-% GITUP-SUBCHECKOUT(1) gitup 1.0.0 | Gitup Manual
-% Sean Mayo
+% GITUP-SUBCHECKOUT(1) gitup 0.1.0 | Gitup Manual
+% Sean Mayo https://github.com/shatteredsword
 % January 2023
 
 # NAME
