@@ -153,8 +153,8 @@ menu() {
 			local_uninstall
 		fi
 	elif [ "$1" = "--generate-release" ]; then
-		local gitup_version = $(./gitup --version | sed 's/gitup version /v/')
-		local latest_tag = $(git describe --tags --abbrev=0)
+		local gitup_version=$(./gitup --version | sed 's/gitup version /v/')
+		local latest_tag=$(git describe --tags --abbrev=0)
 		if [ "$gitup_version" != "$latest_tag" ]; then
 			git config --global user.name "Release Bot"
 			git config --global user.email "kq2t7uxqp@mozmail.com"
