@@ -202,9 +202,16 @@ menu() {
 			https://api.github.com/repos/shatteredsword/gitup/releases \
 			-d '{"tag_name":"'"$gitup_version"'","target_commitish":"main","name":"'"$gitup_version"'","body":"'"$release_description"'","draft":false,"prerelease":false,"generate_release_notes":false}'
 			)
-			# release_id=$("$release_response" | jq '.id' )
-			echo $release_response
-			# local asset_response=$(curl -X POST --data-binary @manpages.tar.gz -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" -H "Content-Type: application/x-gtar" https://uploads.github.com/repos/shatteredsword/gitup/releases/$release_id/assets?name=manpages.tar.gz)
+			release_id=$(echo "$release_response" | jq '.id')
+			local asset_response=$(
+			curl -X POST \
+			--data-binary @manpages.tar.gz \
+			-H "Accept: application/vnd.github+json" 
+			-H "Authorization: Bearer $2" \
+			-H "X-GitHub-Api-Version: 2022-11-28" \
+			-H "Content-Type: application/x-gtar" \
+			https://uploads.github.com/repos/shatteredsword/gitup/releases/$release_id/assets?name=manpages.tar.gz
+			)
 		fi
 	else
 		local_install
