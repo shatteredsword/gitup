@@ -154,7 +154,9 @@ menu() {
 		fi
 	elif [ "$1" = "--generate-release" ]; then
 		local gitup_version=$(./gitup --version | sed 's/gitup version /v/')
+		echo "version: $gitup_version"
 		local latest_tag=$(git describe --tags --abbrev=0)
+		echo "latest_tag: $latest_tag"
 		if [ "$gitup_version" != "$latest_tag" ]; then
 			git config --global user.name "Release Bot"
 			git config --global user.email "kq2t7uxqp@mozmail.com"
@@ -192,12 +194,12 @@ menu() {
 			tar -czf manpages.tar.gz **/*.gz
 			tar -tvf manpages.tar.gz
 			local release_description=$(git log -1 --pretty=%B | cat)
-			local release_response=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/shatteredsword/gitup/releases -d '{"tag_name":"${gitup_version}","target_commitish":"main","name":"${gitup_version}","body":"${release_description}","draft":false,"prerelease":false,"generate_release_notes":false}')
+			local release_response=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/shatteredsword/gitup/releases -d '{"tag_name":$gitup_version,"target_commitish":"main","name":$gitup_version,"body":$release_description,"draft":false,"prerelease":false,"generate_release_notes":false}')
 			release_id=$("$release_response" | jq '.id' )
 			upload_url=$("$release_response" | jq '.upload_url')
 			echo "release_id: $release_id"
 			echo "upload_url: $upload_url"
-			local asset_response=$(curl -X POST --data-binary @manpages.tar.gz -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" -H "Content-Type: application/x-gtar" https://uploads.github.com/repos/shatteredsword/gitup/releases/${release_id}/assets?name=manpages.tar.gz)
+			local asset_response=$(curl -X POST --data-binary @manpages.tar.gz -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" -H "Content-Type: application/x-gtar" https://uploads.github.com/repos/shatteredsword/gitup/releases/$release_id/assets?name=manpages.tar.gz)
 		fi
 	else
 		local_install
