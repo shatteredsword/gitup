@@ -6,21 +6,34 @@ Usage:
 `gitup <command> [OPTION]`
 
 # Dependencies
+
 cat
+
 curl
+
 git
+
 grep
+
 man
+
 mandb
+
 mkdir
+
 rm
+
 sed
 
 # User Installation
 `curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash`
+
 or
+
 `curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash`
+
 `chmod +x setup.bash`
+
 `./setup.bash`
 
 # Global Installation
@@ -29,7 +42,9 @@ or
 or
 
 `curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash`
+
 `chmod +x setup.bash`
+
 `./setup.bash --global`
 
 # Local Uninstall via Script
@@ -38,8 +53,11 @@ or
 or
 
 `curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash`
+
 `chmod +x setup.bash`
+
 `./setup.bash --uninstall`
+
 `rm setup.bash`
 
 # Global Uninstall via Script
@@ -48,8 +66,11 @@ or
 or
 
 `curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash`
+
 `chmod +x setup.bash`
+
 `./setup.bash --uninstall --global`
+
 `rm setup.bash`
 
 # Manual Uninstallation
