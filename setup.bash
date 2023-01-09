@@ -210,7 +210,7 @@ menu() {
 			-H "Authorization: Bearer $2" \
 			-H "X-GitHub-Api-Version: 2022-11-28" \
 			-H "Content-Type: application/x-gtar" \
-			https://uploads.github.com/repos/shatteredsword/gitup/releases/$release_id/assets?name=manpages.tar.gz
+			"https://uploads.github.com/repos/shatteredsword/gitup/releases/$release_id/assets?name=manpages.tar.gz"
 			)
 		fi
 	else
