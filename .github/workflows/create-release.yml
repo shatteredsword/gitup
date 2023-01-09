@@ -1,8 +1,8 @@
 name: create-release
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - main
 jobs:
   generate_manpages:
     runs-on: ubuntu-latest

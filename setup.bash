@@ -153,35 +153,49 @@ menu() {
 			local_uninstall
 		fi
 	elif [ "$1" = "--generate-release" ]; then
-		local is_pandoc_installed=$(command -v pandoc)
-		if [ "$is_pandoc_installed" = "" ]; then
+		local gitup_version = $(./gitup --version | sed 's/gitup version /v/')
+		local latest_tag = $(git describe --tags --abbrev=0)
+		if [ "$gitup_version" != "$latest_tag" ]; then
+			git config --global user.name "Release Bot"
+			git config --global user.email "kq2t7uxqp@mozmail.com"
+			git tag "$gitup_version"
+			git push origin "$gitup_version"
+			local current_date=$(date "+%B %Y")
 			sudo apt update
-			sudo apt install -y pandoc
-		fi
-		cd manpages
-		declare -a dirs
-		i=1
-		for d in */; do
-			dirs[i++]="${d%/}"
-		done
-		for j in "${dirs[@]}"; do
-			echo $j
-			for f in $j/*.md; do
-				local base
-				base=${f%.md}
-				echo "generating $base from $f"
-				pandoc "$f" -s -t man -o "$base"
-				echo "zipping $base"
-				gzip -f "$base"
+			local is_pandoc_installed=$(command -v pandoc)
+			if [ "$is_pandoc_installed" = "" ]; then
+				sudo apt install -y pandoc
+			fi
+			local is_jq_installed=$(command -v jq)
+			if [ "$is_jq_installed" = "" ]; then
+				sudo apt install -y jq
+			fi
+			cd manpages
+			declare -a dirs
+			i=1
+			for d in */; do
+				dirs[i++]="${d%/}"
 			done
-		done
-		tar -czf manpages.tar.gz **/*.gz
-		tar -tvf manpages.tar.gz
-		curl \
-		-H "Accept: application/vnd.github+json" \
-		-H "Authorization: Bearer $2"\
-		-H "X-GitHub-Api-Version: 2022-11-28" \
-		https://api.github.com/repos/shatteredsword/gitup/releases
+			for j in "${dirs[@]}"; do
+				echo $j
+				for f in $j/*.md; do
+					sed -i 's/[DATE]/"$current_date"/' "$f"
+					sed -i 's/[VERSION]/"$gitup_version"/' "$f"
+					local base
+					base=${f%.md}
+					echo "generating $base from $f"
+					pandoc "$f" -s -t man -o "$base"
+					echo "zipping $base"
+					gzip -f "$base"
+				done
+			done
+			tar -czf manpages.tar.gz **/*.gz
+			tar -tvf manpages.tar.gz
+			local release_description=$(git log -1 --pretty=%B | cat)
+			local release_response=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/shatteredsword/gitup/releases -d '{"tag_name":"$gitup_version","target_commitish":"main","name":"$gitup_version","body":"$release_description","draft":false,"prerelease":false,"generate_release_notes":false}')
+			release_id=$("$release_response" | jq '.id' )
+			echo "$release_id"
+		fi
 	else
 		local_install
 	fi

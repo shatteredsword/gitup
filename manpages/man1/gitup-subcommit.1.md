@@ -1,6 +1,6 @@
-% GITUP-SUBCOMMIT(1) gitup 0.1.0 | Gitup Manual
+% GITUP-SUBCOMMIT(1) gitup [VERSION] | Gitup Manual
 % Sean Mayo https://github.com/shatteredsword
-% January 2023
+% [DATE]
 
 # NAME
 
