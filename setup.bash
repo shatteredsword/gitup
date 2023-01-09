@@ -181,8 +181,8 @@ menu() {
 			for j in "${dirs[@]}"; do
 				echo $j
 				for f in $j/*.md; do
-					sed -i "s/[DATE]/${current_date}/" "$f"
-					sed -i "s/[VERSION]/${gitup_version}/" "$f"
+					sed -i "s/\[DATE\]/${current_date}/" "$f"
+					sed -i "s/\[VERSION\]/${gitup_version}/" "$f"
 					local base
 					base=${f%.md}
 					echo "generating $base from $f"
