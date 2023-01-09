@@ -179,8 +179,8 @@ menu() {
 			for j in "${dirs[@]}"; do
 				echo $j
 				for f in $j/*.md; do
-					sed -i 's/[DATE]/"$current_date"/' "$f"
-					sed -i 's/[VERSION]/"$gitup_version"/' "$f"
+					sed -i "s/[DATE]/${current_date}/" "$f"
+					sed -i "s/[VERSION]/${gitup_version}/" "$f"
 					local base
 					base=${f%.md}
 					echo "generating $base from $f"
@@ -192,7 +192,7 @@ menu() {
 			tar -czf manpages.tar.gz **/*.gz
 			tar -tvf manpages.tar.gz
 			local release_description=$(git log -1 --pretty=%B | cat)
-			local release_response=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/shatteredsword/gitup/releases -d '{"tag_name":"$gitup_version","target_commitish":"main","name":"$gitup_version","body":"$release_description","draft":false,"prerelease":false,"generate_release_notes":false}')
+			local release_response=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $2" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/shatteredsword/gitup/releases -d '{"tag_name":"${gitup_version}","target_commitish":"main","name":"${gitup_version}","body":"${release_description}","draft":false,"prerelease":false,"generate_release_notes":false}')
 			release_id=$("$release_response" | jq '.id' )
 			echo "$release_id"
 		fi
