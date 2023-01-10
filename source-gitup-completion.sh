@@ -1,0 +1,1 @@
+source /usr/local/share/bash-completion/completions/gitup-completion.bash

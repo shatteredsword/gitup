@@ -82,6 +82,11 @@ global_install() {
 	sudo chown root:root $temp_file2
 	sudo chmod 755 $temp_file2
 	sudo mv $temp_file2 /usr/local/share/bash-completion/completions/gitup-completion.bash
+	local temp_file3=$(mktemp)
+	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/source-gitup-completion.sh > $temp_file3
+	sudo chown root:root $temp_file3
+	sudo chmod 755 $temp_file3
+	sudo mv $temp_file3 /etc/profile.d/source-gitup-completion.sh
 	echo "TODO"
 	echo "please log out and back in to finish installation"
 }
@@ -94,6 +99,8 @@ global_uninstall() {
 	sudo rm /usr/local/man/*/gitup*.gz
 	sudo mandb
 	echo "removing bash completions"
+	sudo rm /usr/local/share/bash-completion/completions/gitup-completion.bash
+	sudo rm /etc/profile.d/source-gitup-completion.sh
 	echo "TODO"
 	echo "please log out and back in to remove any residual shell references"
 }
@@ -124,6 +131,7 @@ local_uninstall() {
 	sed -i '/##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################/,/##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################/d' $HOME/.profile
 	mandb
 	echo "removing bash completions"
+	rm $HOME/.local/share/bash-completion/completions/gitup-completion.bash
 	echo "TODO"
 	echo "please log out and back in to remove any residual shell references"
 }
