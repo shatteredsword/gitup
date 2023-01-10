@@ -2,6 +2,11 @@
 
 check_dependencies() {
 	echo "checking dependencies"
+	local is_awk_installed=$(command -v awk)
+	if [ "$is_awk_installed" = "" ]; then
+		echo "Gitup requires awk as a prerequisite."
+		exit 0
+	fi
 	local is_cat_installed=$(command -v cat)
 	if [ "$is_cat_installed" = "" ]; then
 		echo "Gitup requires cat as a prerequisite."
@@ -50,6 +55,11 @@ check_dependencies() {
 		echo "see https://sed.sourceforge.io/#download"
 		exit 0
 	fi
+	local is_tr_installed=$(command -v tr)
+	if [ "$is_tr_installed" = "" ]; then
+		echo "Gitup requires tr as a prerequisite."
+		exit 0
+	fi
 	echo "all dependencies met"
 }
 
@@ -64,15 +74,25 @@ global_install() {
 	sudo chmod 755 $temp_file
 	sudo mv $temp_file /usr/local/bin/gitup
 	echo "installing manpages"
-	echo "TODO"
+	manpages_install global
 	echo "installing bash completions"
+	sudo mkdir -p /usr/local/share/bash-completion/completions
+	local temp_file2=$(mktemp)
+	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash > $temp_file2
+	sudo chown root:root $temp_file2
+	sudo chmod 755 $temp_file2
+	sudo mv $temp_file2 /usr/local/share/bash-completion/completions/gitup-completion.bash
 	echo "TODO"
+	echo "please log out and back in to finish installation"
 }
 
 global_uninstall() {
 	echo "removing global install of gitup"
 	echo "removing /usr/local/bin/gitup"
 	sudo rm /usr/local/bin/gitup
+	echo "removing manpages"
+	sudo rm /usr/local/man/*/gitup*.gz
+	sudo mandb
 	echo "removing bash completions"
 	echo "TODO"
 	echo "please log out and back in to remove any residual shell references"
@@ -86,23 +106,47 @@ local_install() {
 	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $HOME/.local/bin/gitup
 	chmod +x $HOME/.local/bin/gitup
 	echo "installing manpages"
-	echo "TODO"
+	manpages_install local
 	echo "installing bash completions"
-	if [ -f "$HOME/.profile" ]; then
-		echo "reloading environment"
-		source $HOME/.profile
-	fi
+	mkdir -p $HOME/.local/share/bash-completion/completions
+	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash > $HOME/.local/share/bash-completion/completions/gitup-completion.bash
+	echo "TODO"
+	echo "please log out and back in to finish installation"
 }
 
 local_uninstall() {
 	echo "removing local install of gitup"
 	echo "removing \$HOME/.local/bin/gitup"
 	rm $HOME/.local/bin/gitup
+	echo "removing manpages"
+	rm $HOME/.local/share/man/*/gitup*.gz
+	echo "removing manpath from .profile"
+	sed -i '/##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################/,/##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################/d' $HOME/.profile
+	mandb
 	echo "removing bash completions"
 	echo "TODO"
-	if [ -f "$HOME/.profile" ]; then
-		echo "reloading environment"
-		source $HOME/.profile
+	echo "please log out and back in to remove any residual shell references"
+}
+
+manpages_install() {
+	local temp_file=$(mktemp)
+	curl -sL https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz > $temp_file
+	if [ "$1" = "local" ]; then
+		mkdir -p $HOME/.local/share/man
+		tar -xf $temp_file -C $HOME/.local/share/man
+		if grep -q -F "##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################" $HOME/.profile; then
+			echo "gitup wasn't properly uninstalled last time. run ./setup.bash --uninstall and rerun this script"
+		else
+			tee -a $HOME/.profile > /dev/null <<EOF
+##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################
+MANPATH="\$HOME/.local/share/man:/usr/local/man:/usr/local/share/man:/usr/share/man"
+##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################
+EOF
+		fi
+		mandb
+	elif [ "$1" = "global" ]; then
+		tar -xf $temp_file -C /usr/local/man
+		sudo mandb
 	fi
 }
 
@@ -213,8 +257,10 @@ menu() {
 			"https://uploads.github.com/repos/shatteredsword/gitup/releases/$release_id/assets?name=manpages.tar.gz"
 			)
 		fi
-	else
+	elif [ "$1" = "" ] || [ "$1" = "--install" ]; then
 		local_install
+	else
+		echo "$1 is not a recognized option"
 	fi
 }
 
