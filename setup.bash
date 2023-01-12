@@ -1,171 +1,152 @@
 #!/usr/bin/env bash
 
+#any time gitup needs to add to a user's bash profile loading script, the code
+#will be wrapped in between 2 copies of the $ENV_STRING
+ENV_STRING="##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################"
+
 check_dependencies() {
 	echo "checking dependencies"
-	local is_awk_installed=$(command -v awk)
-	if [ "$is_awk_installed" = "" ]; then
-		echo "Gitup requires awk as a prerequisite."
-		exit 0
-	fi
-	local is_cat_installed=$(command -v cat)
-	if [ "$is_cat_installed" = "" ]; then
-		echo "Gitup requires cat as a prerequisite."
-		exit 0
-	fi
-	local is_curl_installed=$(command -v curl)
-	if [ "$is_curl_installed" = "" ]; then
-		echo "Gitup requires curl as a prerequisite."
-		exit 0
-	fi
-	local is_git_installed=$(command -v git)
-	if [ "$is_git_installed" = "" ]; then
-		echo "Gitup requires git as a prerequisite."
-		echo "see https://git-scm.com/book/en/v2/Getting-Started-Installing-Git"
-		exit 0
-	fi
-	local is_grep_installed=$(command -v grep)
-	if [ "$is_grep_installed" = "" ]; then
-		echo "Gitup requires grep as a prerequisite."
-		echo "see https://www.gnu.org/software/grep/"
-		exit 0
-	fi
-	local is_man_installed=$(command -v man)
-	if [ "$is_man_installed" = "" ]; then
-		echo "Gitup requires man as a prerequisite."
-		exit 0
-	fi
-	local is_mandb_installed=$(command -v mandb)
-	if [ "$is_mandb_installed" = "" ]; then
-		echo "Gitup requires mandb as a prerequisite."
-		exit 0
-	fi
-	local is_mkdir_installed=$(command -v mkdir)
-	if [ "$is_mkdir_installed" = "" ]; then
-		echo "Gitup requires mkdir as a prerequisite."
-		exit 0
-	fi
-	local is_rm_installed=$(command -v rm)
-	if [ "$is_rm_installed" = "" ]; then
-		echo "Gitup requires rm as a prerequisite."
-		exit 0
-	fi
-	local is_sed_installed=$(command -v sed)
-	if [ "$is_sed_installed" = "" ]; then
-		echo "Gitup requires sed as a prerequisite."
-		echo "see https://sed.sourceforge.io/#download"
-		exit 0
-	fi
-	local is_tr_installed=$(command -v tr)
-	if [ "$is_tr_installed" = "" ]; then
-		echo "Gitup requires tr as a prerequisite."
-		exit 0
-	fi
+	#add any new command line dependencies to this array
+	local deps=(awk cat curl git grep man mandb mkdir rm sed tr)
+	for i in "${deps[@]}"; do
+		if ! command -v "$i" &> /dev/null; then
+			echo "Gitup requires $i as a prerequisite."
+			exit 0
+		fi
+	done
 	echo "all dependencies met"
 }
 
 global_install() {
-	check_dependencies
 	echo "running global installation"
 	sudo mkdir -p /usr/local/bin
-	echo "installing gitup to /usr/local/bin"
 	local temp_file=$(mktemp)
+	echo "downloading latest version of gitup"
 	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $temp_file
+	echo "setting file ownership for gitup"
 	sudo chown root:root $temp_file
+	echo "setting file permissions for gitup"
 	sudo chmod 755 $temp_file
+	echo "installing gitup to /usr/local/bin"
 	sudo mv $temp_file /usr/local/bin/gitup
-	echo "installing manpages"
-	manpages_install global
-	echo "installing bash completions"
+	local temp_file=$(mktemp)
+	echo "downloading manpages tarball"
+	curl -sL https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz > $temp_file
+	echo "installing manpages to /usr/local/man"
+	tar -xf $temp_file -C /usr/local/man
+	echo "regenerating manpages database"
+	sudo mandb
 	sudo mkdir -p /usr/local/share/bash-completion/completions
-	local temp_file2=$(mktemp)
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash > $temp_file2
-	sudo chown root:root $temp_file2
-	sudo chmod 755 $temp_file2
-	sudo mv $temp_file2 /usr/local/share/bash-completion/completions/gitup-completion.bash
-	local temp_file3=$(mktemp)
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/source-gitup-completion.sh > $temp_file3
-	sudo chown root:root $temp_file3
-	sudo chmod 755 $temp_file3
-	sudo mv $temp_file3 /etc/profile.d/source-gitup-completion.sh
-	echo "TODO"
+	local temp_file=$(mktemp)
+	echo "downloading latest version of bash completions"
+	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash > $temp_file
+	echo "setting file ownership for bash completions"
+	sudo chown root:root $temp_file
+	echo "setting file permissions for bash completions"
+	sudo chmod 755 $temp_file
+	echo "installing bash completions to /usr/local/share/bash-completion/completions/gitup-completion.bash"
+	sudo mv $temp_file /usr/local/share/bash-completion/completions/gitup-completion.bash
+	local temp_file=$(mktemp)
+	echo "downloading latest version of bash completions source script"
+	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/source-gitup-completion.sh > $temp_file
+	echo "setting file ownership for bash completions source script"
+	sudo chown root:root $temp_file
+	echo "setting file ownership for bash completions source script"
+	sudo chmod 755 $temp_file
+	echo "installing bash completions source script to /etc/profile.d/source-gitup-completion.sh"
+	sudo mv $temp_file /etc/profile.d/source-gitup-completion.sh
 	echo "please log out and back in to finish installation"
+	exit 0
 }
 
 global_uninstall() {
 	echo "removing global install of gitup"
 	echo "removing /usr/local/bin/gitup"
-	sudo rm /usr/local/bin/gitup
-	echo "removing manpages"
-	sudo rm /usr/local/man/*/gitup*.gz
+	sudo rm -f /usr/local/bin/gitup
+	echo "removing manpages from /usr/local/man"
+	sudo rm -f /usr/local/man/*/gitup*.gz
+	echo "regenerating manpages database"
 	sudo mandb
-	echo "removing bash completions"
-	sudo rm /usr/local/share/bash-completion/completions/gitup-completion.bash
-	sudo rm /etc/profile.d/source-gitup-completion.sh
-	echo "TODO"
+	echo "removing bash completions from /usr/local/share"
+	sudo rm -f /usr/local/share/bash-completion/completions/gitup-completion.bash
+	echo "removing bash completions source script from /etc/profile.d"
+	sudo rm -f /etc/profile.d/source-gitup-completion.sh
 	echo "please log out and back in to remove any residual shell references"
+	exit 0
 }
 
 local_install() {
-	check_dependencies
 	echo "running local installation"
 	mkdir -p $HOME/.local/bin
 	echo "installing gitup to \$HOME/.local/bin"
 	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $HOME/.local/bin/gitup
 	chmod +x $HOME/.local/bin/gitup
-	echo "installing manpages"
-	manpages_install local
+	echo "downloading manpages tarball"
+	local temp_file=$(mktemp)
+	curl -sL https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz > $temp_file
+	mkdir -p $HOME/.local/share/man
+	echo "installing manpages to $HOME/.local/share/man"
+	tar -xf $temp_file -C $HOME/.local/share/man
+	local envs=(.bashrc .profile .bash_login .bash_profile)
+	for i in "${envs[@]}"; do
+		if [ -f "$HOME/$i" ]; then
+			if grep -q -F "$ENV_STRING" "$HOME/$i"; then
+				echo "gitup wasn't properly uninstalled last time. run ./setup.bash --uninstall and rerun this script"
+				exit 0
+			else
+				local env_file="$HOME/$i"
+			fi
+		fi
+	done
+	if ! [ "$env_file" ]; then
+		echo "setup could not find a login shell profile"
+		exit 126
+	else
+		echo "installing login shell hook to $env_file"
+		cat <<- EOF >> $env_file
+				$ENV_STRING
+				MANPATH="\$HOME/.local/share/man:/usr/local/man:/usr/local/share/man:/usr/share/man"
+				source \$HOME/.local/share/bash-completion/completions/gitup-completion.bash
+		$ENV_STRING
+		EOF
+	fi
+	echo "regenerating manpages database"
+	mandb -csp
 	echo "installing bash completions"
 	mkdir -p $HOME/.local/share/bash-completion/completions
+	echo "installing bash completions to $HOME/.local/share/bash-completion/completions/gitup-completion.bash"
 	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash > $HOME/.local/share/bash-completion/completions/gitup-completion.bash
-	echo "TODO"
 	echo "please log out and back in to finish installation"
+	exit 0
 }
 
 local_uninstall() {
 	echo "removing local install of gitup"
-	echo "removing \$HOME/.local/bin/gitup"
-	rm $HOME/.local/bin/gitup
-	echo "removing manpages"
-	rm $HOME/.local/share/man/*/gitup*.gz
-	echo "removing manpath from .profile"
-	sed -i '/##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################/,/##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################/d' $HOME/.profile
-	mandb
-	echo "removing bash completions"
-	rm $HOME/.local/share/bash-completion/completions/gitup-completion.bash
-	echo "TODO"
+	echo "removing $HOME/.local/bin/gitup"
+	rm -f $HOME/.local/bin/gitup
+	echo "removing manpages from $HOME/.local/share/man"
+	[ -e "$HOME/.local/share/man/*/gitup*.gz" ] && rm $HOME/.local/share/man/*/gitup*.gz
+	echo "checking login profiles for manpath"
+	echo "removing manpath and bash completions from .bash_profile"
+	[ -e "$HOME/.bash_profile" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.bash_profile
+	echo "removing manpath and bash completions from .bash_login"
+	[ -e "$HOME/.bash_login" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.bash_login
+	echo "removing manpath and bash completions from .profile"
+	[ -e "$HOME/.profile" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.profile
+	echo "removing manpath and bash completions from .bashrc"
+	[ -e "$HOME/.bashrc" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.bashrc
+	echo "regenerating manpages database"
+	mandb -cs
+	echo "removing bash completions from $HOME/.local/share/bash-completion/completions/gitup-completion.bash"
+	rm -f $HOME/.local/share/bash-completion/completions/gitup-completion.bash
 	echo "please log out and back in to remove any residual shell references"
-}
-
-manpages_install() {
-	local temp_file=$(mktemp)
-	curl -sL https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz > $temp_file
-	if [ "$1" = "local" ]; then
-		mkdir -p $HOME/.local/share/man
-		tar -xf $temp_file -C $HOME/.local/share/man
-		if grep -q -F "##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################" $HOME/.profile; then
-			echo "gitup wasn't properly uninstalled last time. run ./setup.bash --uninstall and rerun this script"
-		else
-			tee -a $HOME/.profile > /dev/null <<EOF
-##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################
-MANPATH="\$HOME/.local/share/man:/usr/local/man:/usr/local/share/man:/usr/share/man"
-##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP##################
-EOF
-		fi
-		mandb
-	elif [ "$1" = "global" ]; then
-		tar -xf $temp_file -C /usr/local/man
-		sudo mandb
-	fi
+	exit 0
 }
 
 sudo_prompt() {
-	if [ "$GITUP_GLOBAL" = "1" ] || [ "$GITUP_UNINSTALL" = "1" ]; then
-		SUDO_ACCEPTED=1
-	else
+	if [ "$GITUP_GLOBAL" != "1" ] && [ "$GITUP_UNINSTALL" != "1" ]; then
 		read -p "this option requires sudo permissions, would you like to continue? y/n " RESPONSE
-		if [ "$RESPONSE" = "y" ] || [ "$RESPONSE" = "Y" ]; then
-			SUDO_ACCEPTED=1
-		else
+		if [ "$RESPONSE" != "y" ] && [ "$RESPONSE" != "Y" ]; then
 			echo "exiting script..."
 			exit 0
 		fi
@@ -173,34 +154,22 @@ sudo_prompt() {
 }
 
 menu() {
-	SUDO_ACCEPTED=0
 	if [ "$1" = "--global" ] || [ "$GITUP_GLOBAL" = "1" ]; then
 		if [ "$2" = "--uninstall" ] || [ "$GITUP_UNINSTALL" = "1" ]; then
 			echo "global uninstall"
 			sudo_prompt
-			if [ $SUDO_ACCEPTED = "1" ]; then
-				global_uninstall
-			else
-				exit 0
-			fi
+			global_uninstall
 		else
 			echo "global installation"
 			sudo_prompt
-			if [ $SUDO_ACCEPTED = "1" ]; then
-				global_install
-			else
-				exit 0
-			fi
+			check_dependencies
+			global_install
 		fi
 	elif [ "$1" = "--uninstall" ] || [ "$GITUP_UNINSTALL" = "1" ]; then
 		if [ "$2" = "--global" ]; then
 			echo "global uninstall"
 			sudo_prompt
-			if [ $SUDO_ACCEPTED = "1" ]; then
-				global_uninstall
-			else
-				exit 0
-			fi
+			global_uninstall
 		else
 			local_uninstall
 		fi
@@ -255,6 +224,7 @@ menu() {
 			-d '{"tag_name":"'"$gitup_version"'","target_commitish":"main","name":"'"$gitup_version"'","body":"'"$release_description"'","draft":false,"prerelease":false,"generate_release_notes":false}'
 			)
 			release_id=$(echo "$release_response" | jq '.id')
+			
 			local asset_response=$(
 			curl -X POST \
 			--data-binary @manpages.tar.gz \
@@ -266,7 +236,12 @@ menu() {
 			)
 		fi
 	elif [ "$1" = "" ] || [ "$1" = "--install" ]; then
-		local_install
+		check_dependencies
+		if [ "$2" = "--global" ]; then
+			global_install
+		else
+			local_install
+		fi
 	else
 		echo "$1 is not a recognized option"
 	fi
