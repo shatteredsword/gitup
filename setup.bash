@@ -7,7 +7,7 @@ ENV_STRING="##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP######
 check_dependencies() {
 	echo "checking dependencies"
 	#add any new command line dependencies to this array
-	local deps=(awk cat curl git grep man mandb mkdir rm sed tr)
+	local deps=(cat git grep man mandb mkdir rm sed tr wget)
 	for i in "${deps[@]}"; do
 		if ! command -v "$i" &> /dev/null; then
 			echo "Gitup requires $i as a prerequisite."
@@ -22,7 +22,7 @@ global_install() {
 	sudo mkdir -p /usr/local/bin
 	local temp_file=$(mktemp)
 	echo "downloading latest version of gitup"
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $temp_file
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup -O $temp_file
 	echo "setting file ownership for gitup"
 	sudo chown root:root $temp_file
 	echo "setting file permissions for gitup"
@@ -31,7 +31,7 @@ global_install() {
 	sudo mv $temp_file /usr/local/bin/gitup
 	local temp_file=$(mktemp)
 	echo "downloading manpages tarball"
-	curl -sL https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz > $temp_file
+	wget -q https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz -O $temp_file
 	echo "installing manpages to /usr/local/man"
 	tar -xf $temp_file -C /usr/local/man
 	echo "regenerating manpages database"
@@ -39,7 +39,7 @@ global_install() {
 	sudo mkdir -p /usr/local/share/bash-completion/completions
 	local temp_file=$(mktemp)
 	echo "downloading latest version of bash completions"
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash > $temp_file
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash -O $temp_file
 	echo "setting file ownership for bash completions"
 	sudo chown root:root $temp_file
 	echo "setting file permissions for bash completions"
@@ -48,7 +48,7 @@ global_install() {
 	sudo mv $temp_file /usr/local/share/bash-completion/completions/gitup-completion.bash
 	local temp_file=$(mktemp)
 	echo "downloading latest version of bash completions source script"
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/source-gitup-completion.sh > $temp_file
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/source-gitup-completion.sh -O $temp_file
 	echo "setting file ownership for bash completions source script"
 	sudo chown root:root $temp_file
 	echo "setting file ownership for bash completions source script"
@@ -79,11 +79,11 @@ local_install() {
 	echo "running local installation"
 	mkdir -p $HOME/.local/bin
 	echo "installing gitup to \$HOME/.local/bin"
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup > $HOME/.local/bin/gitup
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup -O $HOME/.local/bin/gitup
 	chmod +x $HOME/.local/bin/gitup
 	echo "downloading manpages tarball"
 	local temp_file=$(mktemp)
-	curl -sL https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz > $temp_file
+	wget -q https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz -O $temp_file
 	mkdir -p $HOME/.local/share/man
 	echo "installing manpages to $HOME/.local/share/man"
 	tar -xf $temp_file -C $HOME/.local/share/man
@@ -115,7 +115,7 @@ local_install() {
 	echo "installing bash completions"
 	mkdir -p $HOME/.local/share/bash-completion/completions
 	echo "installing bash completions to $HOME/.local/share/bash-completion/completions/gitup-completion.bash"
-	curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash > $HOME/.local/share/bash-completion/completions/gitup-completion.bash
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash -O $HOME/.local/share/bash-completion/completions/gitup-completion.bash
 	echo "please log out and back in to finish installation"
 	exit 0
 }

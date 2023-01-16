@@ -25,7 +25,7 @@ _gitup()
 					COMPREPLY=($(compgen -W "$list" -- ${cur}))
 					;;
 				subrm)
-					local list=$(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' ')
+					local list=$(git config --file .gitmodules --get-regexp path | sed 's/.* //' | tr '\n' ' ')
 					COMPREPLY=($(compgen -W "$list" -- ${cur}))
 					;;
 				substatus)
