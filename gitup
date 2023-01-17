@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#UPDATING THE VERSION NUMBER WILL AUTOMATICALLY CREATE A NEW RELEASE
 VERSION="gitup version 0.1.0"
 SCRIPT_NAME=$(basename "$0")
 
@@ -15,7 +16,6 @@ declare -A ARGUMENTS=(
 	[substatus]=-1
 	[subtag]=2
 	[help]=1
-	[mangen]=0
 )
 
 config() {
@@ -274,21 +274,6 @@ subtag [<options>] [<TAGNAME>]
 mangen
 EOF
 	fi
-}
-
-mangen() {
-	sudo mkdir -p /usr/local/man/man1
-	for f in manpages/man1/*.md; do
-		local base
-		base=${f%.*}
-		echo "generating $base.1 from $f"
-		pandoc "$f" -s -t man -o "$base.1"
-		echo "zipping $base.1"
-		gzip "$base.1"
-		echo "moving $base.1.gz"
-		#sudo mv "$base.1.gz" /usr/local/man/man1
-	done
-	sudo mandb
 }
 
 menu() {
