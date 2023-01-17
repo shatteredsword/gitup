@@ -7,7 +7,7 @@ ENV_STRING="##################ENTRIES BETWEEN THESE LINES MANAGED BY GITUP######
 check_dependencies() {
 	echo "checking dependencies"
 	#add any new command line dependencies to this array
-	local deps=(cat git grep man mandb mkdir rm sed tr wget)
+	local deps=(cat find git grep man mandb mkdir rm sed tr wget)
 	for i in "${deps[@]}"; do
 		if ! command -v "$i" &> /dev/null; then
 			echo "Gitup requires $i as a prerequisite."
@@ -20,41 +20,42 @@ check_dependencies() {
 global_install() {
 	echo "running global installation"
 	sudo mkdir -p /usr/local/bin
-	local temp_file=$(mktemp)
+	local temp_file
+	temp_file=$(mktemp)
 	echo "downloading latest version of gitup"
-	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup -O $temp_file
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup -O "$temp_file"
 	echo "setting file ownership for gitup"
-	sudo chown root:root $temp_file
+	sudo chown root:root "$temp_file"
 	echo "setting file permissions for gitup"
-	sudo chmod 755 $temp_file
+	sudo chmod 755 "$temp_file"
 	echo "installing gitup to /usr/local/bin"
-	sudo mv $temp_file /usr/local/bin/gitup
-	local temp_file=$(mktemp)
+	sudo mv "$temp_file" /usr/local/bin/gitup
+	temp_file=$(mktemp)
 	echo "downloading manpages tarball"
-	wget -q https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz -O $temp_file
+	wget -q https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz -O "$temp_file"
 	echo "installing manpages to /usr/local/man"
-	tar -xf $temp_file -C /usr/local/man
+	tar -xf "$temp_file" -C /usr/local/man
 	echo "regenerating manpages database"
 	sudo mandb
 	sudo mkdir -p /usr/local/share/bash-completion/completions
-	local temp_file=$(mktemp)
+	temp_file=$(mktemp)
 	echo "downloading latest version of bash completions"
-	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash -O $temp_file
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash -O "$temp_file"
 	echo "setting file ownership for bash completions"
-	sudo chown root:root $temp_file
+	sudo chown root:root "$temp_file"
 	echo "setting file permissions for bash completions"
-	sudo chmod 755 $temp_file
+	sudo chmod 755 "$temp_file"
 	echo "installing bash completions to /usr/local/share/bash-completion/completions/gitup-completion.bash"
-	sudo mv $temp_file /usr/local/share/bash-completion/completions/gitup-completion.bash
-	local temp_file=$(mktemp)
+	sudo mv "$temp_file" /usr/local/share/bash-completion/completions/gitup-completion.bash
+	temp_file=$(mktemp)
 	echo "downloading latest version of bash completions source script"
-	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/source-gitup-completion.sh -O $temp_file
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/source-gitup-completion.sh -O "$temp_file"
 	echo "setting file ownership for bash completions source script"
-	sudo chown root:root $temp_file
+	sudo chown root:root "$temp_file"
 	echo "setting file ownership for bash completions source script"
-	sudo chmod 755 $temp_file
+	sudo chmod 755 "$temp_file"
 	echo "installing bash completions source script to /etc/profile.d/source-gitup-completion.sh"
-	sudo mv $temp_file /etc/profile.d/source-gitup-completion.sh
+	sudo mv "$temp_file" /etc/profile.d/source-gitup-completion.sh
 	echo "please log out and back in to finish installation"
 	exit 0
 }
@@ -77,24 +78,25 @@ global_uninstall() {
 
 local_install() {
 	echo "running local installation"
-	mkdir -p $HOME/.local/bin
+	mkdir -p "$HOME"/.local/bin
 	echo "installing gitup to \$HOME/.local/bin"
-	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup -O $HOME/.local/bin/gitup
-	chmod +x $HOME/.local/bin/gitup
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup -O "$HOME"/.local/bin/gitup
+	chmod +x "$HOME"/.local/bin/gitup
 	echo "downloading manpages tarball"
-	local temp_file=$(mktemp)
-	wget -q https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz -O $temp_file
-	mkdir -p $HOME/.local/share/man
+	local temp_file
+	temp_file=$(mktemp)
+	wget -q https://github.com/shatteredsword/gitup/releases/latest/download/manpages.tar.gz -O "$temp_file"
+	mkdir -p "$HOME"/.local/share/man
 	echo "installing manpages to $HOME/.local/share/man"
-	tar -xf $temp_file -C $HOME/.local/share/man
+	tar -xf "$temp_file" -C "$HOME"/.local/share/man
 	local envs=(.bashrc .profile .bash_login .bash_profile)
 	for i in "${envs[@]}"; do
-		if [ -f "$HOME/$i" ]; then
-			if grep -q -F "$ENV_STRING" "$HOME/$i"; then
+		if [ -f "$HOME"/"$i" ]; then
+			if grep -q -F "$ENV_STRING" "$HOME"/"$i"; then
 				echo "gitup wasn't properly uninstalled last time. run ./setup.bash --uninstall and rerun this script"
 				exit 0
 			else
-				local env_file="$HOME/$i"
+				local env_file="$HOME"/"$i"
 			fi
 		fi
 	done
@@ -103,7 +105,7 @@ local_install() {
 		exit 126
 	else
 		echo "installing login shell hook to $env_file"
-		cat <<- EOF >> $env_file
+		cat <<- EOF >> "$env_file"
 				$ENV_STRING
 				MANPATH="\$HOME/.local/share/man:/usr/local/man:/usr/local/share/man:/usr/share/man"
 				source \$HOME/.local/share/bash-completion/completions/gitup-completion.bash
@@ -113,9 +115,9 @@ local_install() {
 	echo "regenerating manpages database"
 	mandb -csp
 	echo "installing bash completions"
-	mkdir -p $HOME/.local/share/bash-completion/completions
+	mkdir -p "$HOME"/.local/share/bash-completion/completions
 	echo "installing bash completions to $HOME/.local/share/bash-completion/completions/gitup-completion.bash"
-	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash -O $HOME/.local/share/bash-completion/completions/gitup-completion.bash
+	wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/gitup-completion.bash -O "$HOME"/.local/share/bash-completion/completions/gitup-completion.bash
 	echo "please log out and back in to finish installation"
 	exit 0
 }
@@ -123,29 +125,29 @@ local_install() {
 local_uninstall() {
 	echo "removing local install of gitup"
 	echo "removing $HOME/.local/bin/gitup"
-	rm -f $HOME/.local/bin/gitup
+	rm -f "$HOME/.local/bin/gitup"
 	echo "removing manpages from $HOME/.local/share/man"
-	[ -e "$HOME/.local/share/man/*/gitup*.gz" ] && rm $HOME/.local/share/man/*/gitup*.gz
+	find "$HOME/.local/share/man" -name "gitup*.gz" -delete
 	echo "checking login profiles for manpath"
 	echo "removing manpath and bash completions from .bash_profile"
-	[ -e "$HOME/.bash_profile" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.bash_profile
+	[ -e "$HOME/.bash_profile" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" "$HOME/.bash_profile"
 	echo "removing manpath and bash completions from .bash_login"
-	[ -e "$HOME/.bash_login" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.bash_login
+	[ -e "$HOME/.bash_login" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" "$HOME/.bash_login"
 	echo "removing manpath and bash completions from .profile"
-	[ -e "$HOME/.profile" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.profile
+	[ -e "$HOME/.profile" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" "$HOME/.profile"
 	echo "removing manpath and bash completions from .bashrc"
-	[ -e "$HOME/.bashrc" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" $HOME/.bashrc
+	[ -e "$HOME/.bashrc" ] && sed -i "/$ENV_STRING/,/$ENV_STRING/d" "$HOME/.bashrc"
 	echo "regenerating manpages database"
 	mandb -cs
 	echo "removing bash completions from $HOME/.local/share/bash-completion/completions/gitup-completion.bash"
-	rm -f $HOME/.local/share/bash-completion/completions/gitup-completion.bash
+	rm -f "$HOME/.local/share/bash-completion/completions/gitup-completion.bash"
 	echo "please log out and back in to remove any residual shell references"
 	exit 0
 }
 
 sudo_prompt() {
 	if [ "$GITUP_GLOBAL" != "1" ] && [ "$GITUP_UNINSTALL" != "1" ]; then
-		read -p "this option requires sudo permissions, would you like to continue? y/n " RESPONSE
+		read -rp "this option requires sudo permissions, would you like to continue? y/n " RESPONSE
 		if [ "$RESPONSE" != "y" ] && [ "$RESPONSE" != "Y" ]; then
 			echo "exiting script..."
 			exit 0
@@ -174,34 +176,39 @@ menu() {
 			local_uninstall
 		fi
 	elif [ "$1" = "--generate-release" ]; then
-		local gitup_version=$(./gitup --version | sed 's/gitup version /v/')
+		local gitup_version
+		gitup_version=$(./gitup --version | sed 's/gitup version /v/')
 		echo "version: $gitup_version"
-		local latest_tag=$(git describe --tags --abbrev=0)
+		local latest_tag
+		latest_tag=$(git describe --tags --abbrev=0)
 		echo "latest_tag: $latest_tag"
 		if [ "$gitup_version" != "$latest_tag" ]; then
 			git config --global user.name "Release Bot"
 			git config --global user.email "kq2t7uxqp@mozmail.com"
 			git tag "$gitup_version"
 			git push origin "$gitup_version"
-			local current_date=$(date "+%B %Y")
+			local current_date
+			current_date=$(date "+%B %Y")
 			sudo apt update
-			local is_pandoc_installed=$(command -v pandoc)
+			local is_pandoc_installed
+			is_pandoc_installed=$(command -v pandoc)
 			if [ "$is_pandoc_installed" = "" ]; then
 				sudo apt install -y pandoc
 			fi
-			local is_jq_installed=$(command -v jq)
+			local is_jq_installed
+			is_jq_installed=$(command -v jq)
 			if [ "$is_jq_installed" = "" ]; then
 				sudo apt install -y jq
 			fi
-			cd manpages
+			cd manpages || exit
 			declare -a dirs
 			i=1
 			for d in */; do
 				dirs[i++]="${d%/}"
 			done
 			for j in "${dirs[@]}"; do
-				echo $j
-				for f in $j/*.md; do
+				echo "$j"
+				for f in "$j"/*.md; do
 					sed -i "s/\[DATE\]/${current_date}/" "$f"
 					sed -i "s/\[VERSION\]/${gitup_version}/" "$f"
 					local base
@@ -212,10 +219,11 @@ menu() {
 					gzip -f "$base"
 				done
 			done
-			tar -czf manpages.tar.gz **/*.gz
-			tar -tvf manpages.tar.gz
-			local release_description=$(git log -1 --pretty=%B | cat)
-			local release_response=$(
+			tar -czf manpages.tar.gz ./**/*.gz
+			local release_description
+			release_description=$(git log -1 --pretty=%B | cat)
+			local release_response
+			release_response=$(
 			curl -X POST \
 			-H "Accept: application/vnd.github+json" \
 			-H "Authorization: Bearer $2" \
@@ -223,9 +231,8 @@ menu() {
 			https://api.github.com/repos/shatteredsword/gitup/releases \
 			-d '{"tag_name":"'"$gitup_version"'","target_commitish":"main","name":"'"$gitup_version"'","body":"'"$release_description"'","draft":false,"prerelease":false,"generate_release_notes":false}'
 			)
+			local release_id
 			release_id=$(echo "$release_response" | jq '.id')
-			
-			local asset_response=$(
 			curl -X POST \
 			--data-binary @manpages.tar.gz \
 			-H "Accept: application/vnd.github+json" \
@@ -233,7 +240,7 @@ menu() {
 			-H "X-GitHub-Api-Version: 2022-11-28" \
 			-H "Content-Type: application/x-gtar" \
 			"https://uploads.github.com/repos/shatteredsword/gitup/releases/$release_id/assets?name=manpages.tar.gz"
-			)
+			
 		fi
 	elif [ "$1" = "" ] || [ "$1" = "--install" ]; then
 		check_dependencies
@@ -247,4 +254,4 @@ menu() {
 	fi
 }
 
-menu $@
+menu "$@"
