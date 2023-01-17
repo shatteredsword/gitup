@@ -7,9 +7,8 @@ Usage:
 
 # Dependencies
 
-awk\
 cat\
-curl\
+find\
 git\
 grep\
 man\
@@ -17,35 +16,40 @@ mandb\
 mkdir\
 rm\
 sed\
-tr
+tr\
+wget
 
+# Basic Installation
+```
+wget -q -O - https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash
+```
 # User Installation
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash`
+wget -q -O - https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | bash`
 ```
 or
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash
+wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash -O setup.bash
 chmod +x setup.bash
 ./setup.bash
 ```
 # Global Installation
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | GITUP_GLOBAL=1 bash
+wget -q -O - https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | GITUP_GLOBAL=1 bash
 ```
 or
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash
+wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash -O setup.bash
 chmod +x setup.bash
 ./setup.bash --global
 ```
 # Local Uninstall via Script
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | GITUP_UNINSTALL=1 bash
+wget -q -O - https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | GITUP_UNINSTALL=1 bash
 ```
 or
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash
+wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash -O setup.bash
 chmod +x setup.bash
 ./setup.bash --uninstall
 rm setup.bash
@@ -53,11 +57,11 @@ rm setup.bash
 
 # Global Uninstall via Script
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | GITUP_GLOBAL=1 GITUP_UNINSTALL=1 bash
+wget -q -O - https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash | GITUP_GLOBAL=1 GITUP_UNINSTALL=1 bash
 ```
 or
 ```
-curl -s https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash > setup.bash
+wget -q https://raw.githubusercontent.com/shatteredsword/gitup/main/setup.bash -O setup.bash
 chmod +x setup.bash
 ./setup.bash --uninstall --global
 rm setup.bash
