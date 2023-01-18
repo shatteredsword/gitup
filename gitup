@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #UPDATING THE VERSION NUMBER WILL AUTOMATICALLY CREATE A NEW RELEASE
-VERSION="gitup version 0.1.1"
+VERSION="gitup version 0.1.2"
 SCRIPT_NAME=$(basename "$0")
 
 #add any top level functions that you want to be accessible to this list 
@@ -143,13 +143,13 @@ subcommit() {
 		mapfile -t subsubmodule_array <<< "$(echo "${recsubmodule_array[@]}" "${submodule_array[@]}" | tr ' ' '\n' | sort | uniq -u )"
 		for i in "${subsubmodule_array[@]}"; do
 			echo "adding all files in submodule $i to the index"
-			git add ./*
-			git commit "$@"
+			git -C "$i" add ./*
+			git -C "$i" commit "$@"
 		done
 		for i in "${submodule_array[@]}"; do
 			echo "adding all files in submodule $i to the index"
-			git add ./*
-			git commit "$@"
+			git -C "$i" add ./*
+			git -C "$i" commit "$@"
 		done
 		echo "adding all files in top level repo to the index"
 		git add ./*
