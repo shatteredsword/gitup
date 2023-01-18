@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #UPDATING THE VERSION NUMBER WILL AUTOMATICALLY CREATE A NEW RELEASE
-VERSION="gitup version 0.1.0"
+VERSION="gitup version 0.1.1"
 SCRIPT_NAME=$(basename "$0")
 
 #add any top level functions that you want to be accessible to this list 
@@ -135,8 +135,25 @@ subcommit() {
 	if [[ "$*" == *"--help"* ]] || [[ "$*" == *"-h"* ]]; then
 		man "$SCRIPT_NAME-${FUNCNAME[0]}"
 	else
+		local submodule_array
+		mapfile -t submodule_array <<< "$(git submodule status | sed -e 's/^.* \(.*\) .*/\1/')"
+		local recsubmodule_array
+		mapfile -t recsubmodule_array <<< "$(git submodule status --recursive | sed -e 's/^.* \(.*\) .*/\1/')"
+		local subsubmodule_array
+		mapfile -t subsubmodule_array <<< "$(echo "${recsubmodule_array[@]}" "${submodule_array[@]}" | tr ' ' '\n' | sort | uniq -u )"
+		for i in "${subsubmodule_array[@]}"; do
+			echo "adding all files in submodule $i to the index"
+			git add ./*
+			git commit "$@"
+		done
+		for i in "${submodule_array[@]}"; do
+			echo "adding all files in submodule $i to the index"
+			git add ./*
+			git commit "$@"
+		done
+		echo "adding all files in top level repo to the index"
+		git add ./*
 		git commit "$@"
-		git submodule foreach --recursive git commit "$@"
 	fi
 }
 
